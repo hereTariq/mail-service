@@ -4,16 +4,15 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
-
 
 const generateTemplate = (name, number, message) => {
     return `
         <!DOCTYPE html>
-<html>
-<head>
+        <html>
+        <head>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,8 +49,8 @@ const generateTemplate = (name, number, message) => {
             color: #777;
         }
     </style>
-</head>
-<body>
+        </head>
+        <body>
     <div class="email-container">
         <div class="email-header">
             New Contact Us Submission
@@ -65,18 +64,16 @@ const generateTemplate = (name, number, message) => {
             <p>This email was generated from the Contact Us form on your website.</p>
         </div>
     </div>
-</body>
-</html>
+        </body>
+        </html>
 
-    `
-}
+    `;
+};
 
-
-app.get("/", (req, res) => {
-    res.send("hello there")
-})
+app.get('/', (req, res) => {
+    res.send('hello there');
+});
 app.post('/api/send-email', async (req, res, next) => {
-
     const { name, number, message, email, subject } = req.body;
 
     // Validation function
@@ -91,7 +88,9 @@ app.post('/api/send-email', async (req, res, next) => {
         // Validate mobile number (example: only digits and 10-15 characters long)
         const phoneRegex = /^[0-9]{10,15}$/;
         if (!number || !phoneRegex.test(number)) {
-            errors.push('Invalid mobile number. It should be 10-15 digits long.');
+            errors.push(
+                'Invalid mobile number. It should be 10-15 digits long.'
+            );
         }
 
         // Validate email
@@ -101,12 +100,20 @@ app.post('/api/send-email', async (req, res, next) => {
         }
 
         // Validate subject
-        if (!subject || typeof subject !== 'string' || subject.trim().length < 3) {
+        if (
+            !subject ||
+            typeof subject !== 'string' ||
+            subject.trim().length < 3
+        ) {
             errors.push('Subject must be at least 3 characters long.');
         }
 
         // Validate message
-        if (!message || typeof message !== 'string' || message.trim().length < 10) {
+        if (
+            !message ||
+            typeof message !== 'string' ||
+            message.trim().length < 10
+        ) {
             errors.push('Message must be at least 10 characters long.');
         }
 
@@ -114,11 +121,18 @@ app.post('/api/send-email', async (req, res, next) => {
     };
 
     // Perform validation
-    const errors = validateContactForm({ name, number, message, email, subject });
+    const errors = validateContactForm({
+        name,
+        number,
+        message,
+        email,
+        subject,
+    });
 
     if (errors.length > 0) {
         return res.status(400).json({ success: false, errors });
     }
+
     try {
         const options = {
             service: 'gmail',
@@ -130,26 +144,23 @@ app.post('/api/send-email', async (req, res, next) => {
             },
         };
 
-
-        const htmlTemplate = generateTemplate(name, number, message)
-
+        const htmlTemplate = generateTemplate(name, number, message);
         const mailOptions = {
-            from: process.env.USER,
-            to: email,
+            from: email,
+            to: 'mohd.umairraza3412@gmail.com',
             subject: subject,
             html: htmlTemplate,
+            replyTo: email,
         };
 
         const transporter = nodemailer.createTransport(options);
         const info = await transporter.sendMail(mailOptions);
 
-
-        res.status(200).json({ status: true, message: "mail sent." })
+        res.status(200).json({ status: true, message: 'mail sent.' });
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message })
+        res.status(500).json({ status: false, message: error.message });
     }
-})
-
+});
 
 app.listen(PORT, () =>
     console.log('server running on http://localhost:' + PORT)
